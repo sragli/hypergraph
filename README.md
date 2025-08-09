@@ -66,7 +66,3 @@ Hypergraph.neighbors(hg, :alice)               # Who shares hyperedges with Alic
 Hypergraph.connected?(hg, :alice, :charlie)    # Are Alice and Charlie connected?
 Hypergraph.stats(hg)      
 ```
-
-The module uses MapSets internally for efficient set operations and ensures data consistency
-(vertices referenced in hyperedges are automatically added to the vertex set). It's designed
-to be both functional and performant for typical hypergraph operations.

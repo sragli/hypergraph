@@ -44,7 +44,29 @@ defmodule HypergraphTest do
     assert hg.hyperedges == MapSet.new([MapSet.new([:one])])
   end
 
-  test "computes degree of a vertex" do
+  test "returns the number of vertices in a hypergraph" do
+    hg =
+      Hypergraph.new()
+      |> Hypergraph.add_vertex(:one)
+      |> Hypergraph.add_vertex(:two)
+
+    assert Hypergraph.vertex_count(hg) == 2
+    assert length(Hypergraph.vertices(hg)) == 2
+  end
+
+  test "returns the number of edges in a hypergraph" do
+    hg =
+      Hypergraph.new()
+      |> Hypergraph.add_vertex(:one)
+      |> Hypergraph.add_vertex(:two)
+      |> Hypergraph.add_hyperedge([:one, :two])
+      |> Hypergraph.add_hyperedge([:one, :one])
+
+    assert Hypergraph.hyperedge_count(hg) == 2
+    assert length(Hypergraph.hyperedges(hg)) == 2
+  end
+
+  test "computes the degree of a vertex" do
     hg =
       Hypergraph.new()
       |> Hypergraph.add_vertex(:one)
