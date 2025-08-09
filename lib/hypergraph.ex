@@ -11,9 +11,9 @@ defmodule Hypergraph do
   @type vertex :: any()
   @type hyperedge :: MapSet.t(vertex())
   @type t :: %__MODULE__{
-    vertices: MapSet.t(vertex()),
-    hyperedges: MapSet.t(hyperedge())
-  }
+          vertices: MapSet.t(vertex()),
+          hyperedges: MapSet.t(hyperedge())
+        }
 
   @doc """
   Creates a new empty hypergraph.
@@ -91,7 +91,7 @@ defmodule Hypergraph do
     new_hyperedges =
       hypergraph.hyperedges
       |> Enum.map(&MapSet.delete(&1, vertex))
-      |> Enum.reject(&MapSet.size(&1) == 0)
+      |> Enum.reject(&(MapSet.size(&1) == 0))
       |> MapSet.new()
 
     %{hypergraph | vertices: new_vertices, hyperedges: new_hyperedges}
@@ -221,7 +221,11 @@ defmodule Hypergraph do
       hyperedge_count: hyperedge_count(hypergraph),
       max_hyperedge_size: if(hyperedge_sizes == [], do: 0, else: Enum.max(hyperedge_sizes)),
       min_hyperedge_size: if(hyperedge_sizes == [], do: 0, else: Enum.min(hyperedge_sizes)),
-      avg_hyperedge_size: if(hyperedge_sizes == [], do: 0, else: Enum.sum(hyperedge_sizes) / length(hyperedge_sizes)),
+      avg_hyperedge_size:
+        if(hyperedge_sizes == [],
+          do: 0,
+          else: Enum.sum(hyperedge_sizes) / length(hyperedge_sizes)
+        ),
       max_degree: if(degrees == [], do: 0, else: Enum.max(degrees)),
       min_degree: if(degrees == [], do: 0, else: Enum.min(degrees)),
       avg_degree: if(degrees == [], do: 0, else: Enum.sum(degrees) / length(degrees))
