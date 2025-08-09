@@ -23,15 +23,25 @@ defmodule HypergraphTest do
   test "removes an edge from a hypergraph" do
     hg =
       Hypergraph.new()
-      |> Hypergraph.add_vertex(:one)
-      |> Hypergraph.add_vertex(:two)
-      |> Hypergraph.add_vertex(:three)
+      |> Hypergraph.add_vertices([:one, :two, :three])
       |> Hypergraph.add_hyperedge([:one, :two])
       |> Hypergraph.add_hyperedge([:two, :three])
       |> Hypergraph.remove_hyperedge([:one, :two])
 
     assert hg.vertices == MapSet.new([:one, :two, :three])
     assert hg.hyperedges == MapSet.new([MapSet.new([:two, :three])])
+  end
+
+  test "removes a vertex from a hypergraph" do
+    hg =
+      Hypergraph.new()
+      |> Hypergraph.add_vertex(:one)
+      |> Hypergraph.add_vertex(:two)
+      |> Hypergraph.add_hyperedge([:one, :two])
+      |> Hypergraph.remove_vertex(:two)
+
+    assert hg.vertices == MapSet.new([:one])
+    assert hg.hyperedges == MapSet.new([MapSet.new([:one])])
   end
 
   test "computes degree of a vertex" do
@@ -43,5 +53,25 @@ defmodule HypergraphTest do
       |> Hypergraph.add_hyperedge([:two, :one])
 
     assert Hypergraph.degree(hg, :one) == 1
+  end
+
+  test "calculates the number of neighbors of a vertex" do
+    hg =
+      Hypergraph.new()
+      |> Hypergraph.add_vertices([:one, :two, :three])
+      |> Hypergraph.add_hyperedge([:one, :two])
+
+    assert Hypergraph.neighbors(hg, :one) == [:two]
+  end
+
+  test "checks if two vertices are connected" do
+    hg =
+      Hypergraph.new()
+      |> Hypergraph.add_vertices([:one, :two, :three])
+      |> Hypergraph.add_hyperedge([:one, :two])
+      |> Hypergraph.add_hyperedge([:three, :two])
+
+    assert Hypergraph.connected?(hg, :one, :two)
+    assert Hypergraph.connected?(hg, :one, :three) == false
   end
 end
