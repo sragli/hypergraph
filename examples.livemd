@@ -1,0 +1,682 @@
+# Hypergraph Visualization
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.12"},
+  {:kino_vega_lite, "~> 0.1"},
+  {:vega_lite, "~> 0.1"},
+  {:hypergraph, path: __DIR__}
+])
+```
+
+## Introduction
+
+This Livebook demonstrates the Hypergraph module with interactive visualizations. A hypergraph is a generalization of a regular graph where edges (hyperedges) can connect more than two vertices at once.
+
+## Creating Sample Hypergraphs
+
+### Example 1: Social network hypergraph
+
+```elixir
+social_hg = 
+  Hypergraph.new()
+  |> Hypergraph.add_hyperedge(["Alice", "Bob", "Charlie"])  # Study group
+  |> Hypergraph.add_hyperedge(["Bob", "Diana", "Eve"])      # Project team
+  |> Hypergraph.add_hyperedge(["Alice", "Eve"])             # Coffee buddies
+  |> Hypergraph.add_hyperedge(["Charlie", "Frank"])         # Gym partners
+  |> Hypergraph.add_hyperedge(["Diana", "Frank", "Grace"])  # Book club
+```
+
+### Example 2: Chemical reaction hypergraph
+
+```elixir
+chemical_hg = 
+  Hypergraph.new()
+  |> Hypergraph.add_hyperedge(["H2", "O2", "H2O"])         # Water formation
+  |> Hypergraph.add_hyperedge(["CH4", "O2", "CO2", "H2O"]) # Combustion
+  |> Hypergraph.add_hyperedge(["CO2", "H2O", "H2CO3"])     # Carbonic acid
+  |> Hypergraph.add_hyperedge(["H2O", "H+", "OH-"])        # Water ionization
+```
+
+## Visualization Helper Functions
+
+```elixir
+defmodule HypergraphViz do
+  @doc """
+  Converts a hypergraph to data suitable for VegaLite network visualization.
+  Creates a bipartite representation where vertices and hyperedges are shown as different node types.
+  """
+  def to_bipartite_data(hypergraph) do
+    vertices = Hypergraph.vertices(hypergraph)
+    hyperedges = Hypergraph.hyperedges(hypergraph)
+    
+    # Create vertex nodes
+    vertex_nodes = 
+      vertices
+      |> Enum.with_index()
+      |> Enum.map(fn {vertex, idx} ->
+        %{
+          id: "v_#{vertex}",
+          label: to_string(vertex),
+          type: "vertex",
+          x: 100 + rem(idx, 6) * 120,
+          y: 100 + div(idx, 6) * 100,
+          degree: Hypergraph.degree(hypergraph, vertex)
+        }
+      end)
+    
+    # Create hyperedge nodes  
+    hyperedge_nodes =
+      hyperedges
+      |> Enum.with_index()
+      |> Enum.map(fn {hyperedge, idx} ->
+        hyperedge_list = MapSet.to_list(hyperedge)
+        %{
+          id: "he_#{idx}",
+          label: "E#{idx}",
+          type: "hyperedge",
+          x: 200 + rem(idx, 5) * 150,
+          y: 250 + div(idx, 5) * 120,
+          degree: MapSet.size(hyperedge),  # Use size as degree for hyperedges
+          size: MapSet.size(hyperedge),
+          members: Enum.join(hyperedge_list, ", ")
+        }
+      end)
+    
+    # Create links between vertices and hyperedges
+    links =
+      hyperedges
+      |> Enum.with_index()
+      |> Enum.flat_map(fn {hyperedge, he_idx} ->
+        hyperedge
+        |> MapSet.to_list()
+        |> Enum.map(fn vertex ->
+          %{
+            source: "v_#{vertex}",
+            target: "he_#{he_idx}"
+          }
+        end)
+      end)
+    
+    nodes = vertex_nodes ++ hyperedge_nodes
+    
+    %{nodes: nodes, links: links}
+  end
+  
+  @doc """
+  Creates a regular graph representation for comparison.
+  """
+  def to_graph_data(hypergraph) do
+    vertices = Hypergraph.vertices(hypergraph)
+    edges = Hypergraph.to_graph(hypergraph)
+    
+    # Position vertices in a circle
+    vertex_count = length(vertices)
+    angle_step = 2 * :math.pi() / max(vertex_count, 1)
+    
+    vertex_nodes = 
+      vertices
+      |> Enum.with_index()
+      |> Enum.map(fn {vertex, idx} ->
+        angle = idx * angle_step
+        %{
+          id: to_string(vertex),
+          label: to_string(vertex),
+          x: 300 + 200 * :math.cos(angle),
+          y: 300 + 200 * :math.sin(angle),
+          degree: Hypergraph.degree(hypergraph, vertex)
+        }
+      end)
+    
+    edge_links = 
+      edges
+      |> Enum.map(fn {v1, v2} ->
+        %{
+          source: to_string(v1),
+          target: to_string(v2)
+        }
+      end)
+    
+    %{nodes: vertex_nodes, links: edge_links}
+  end
+end
+```
+
+## Interactive Hypergraph Visualization
+
+This visualization shows the bipartite representation where circles represent vertices and squares represent hyperedges.
+
+<!-- livebook:{"break_markdown":true} -->
+
+Visualize the social network hypergraph:
+
+```elixir
+social_data = HypergraphViz.to_bipartite_data(social_hg)
+```
+
+```elixir
+VegaLite.new(width: 650, height: 450, title: "Social Network Hypergraph (Bipartite View)")
+|> VegaLite.data_from_values(social_data.nodes)
+|> VegaLite.mark(:circle, size: 200, stroke: "black", strokeWidth: 2)
+|> VegaLite.encode_field(:x, "x", type: :quantitative, scale: [domain: [0, 800]])
+|> VegaLite.encode_field(:y, "y", type: :quantitative, scale: [domain: [0, 600]])
+|> VegaLite.encode_field(:color, "type", type: :nominal, 
+    scale: [range: ["lightblue", "lightcoral"]])
+|> VegaLite.encode_field(:shape, "type", type: :nominal,
+    scale: [range: ["circle", "square"]])
+|> VegaLite.encode_field(:size, "degree", type: :quantitative, 
+    scale: [range: [100, 400]])
+|> VegaLite.encode_field(:tooltip, "label", type: :nominal)
+```
+
+## Hypergraph Statistics Visualization
+
+Create a comparison of different hypergraphs:
+
+```elixir
+hypergraphs = [
+  {"Social Network", social_hg},
+  {"Chemical Reactions", chemical_hg}
+]
+
+stats_data = 
+  hypergraphs
+  |> Enum.map(fn {name, hg} ->
+    stats = Hypergraph.stats(hg)
+    %{
+      name: name,
+      vertices: stats.vertex_count,
+      hyperedges: stats.hyperedge_count,
+      avg_degree: Float.round(stats.avg_degree, 2),
+      max_hyperedge_size: stats.max_hyperedge_size,
+      avg_hyperedge_size: Float.round(stats.avg_hyperedge_size, 2)
+    }
+  end)
+```
+
+Visualize vertex degrees for social network:
+
+```elixir
+social_vertices = Hypergraph.vertices(social_hg)
+degree_data = 
+  social_vertices
+  |> Enum.map(fn vertex ->
+    %{
+      vertex: vertex,
+      degree: Hypergraph.degree(social_hg, vertex),
+      neighbors_count: length(Hypergraph.neighbors(social_hg, vertex))
+    }
+  end)
+
+VegaLite.new(width: 650, height: 300, title: "Vertex Degrees in Social Network")
+|> VegaLite.data_from_values(degree_data)
+|> VegaLite.mark(:bar)
+|> VegaLite.encode_field(:x, "vertex", type: :nominal, axis: [title: "Vertex"])
+|> VegaLite.encode_field(:y, "degree", type: :quantitative, axis: [title: "Degree"])
+|> VegaLite.encode_field(:color, "degree", type: :quantitative, scale: [scheme: "blues"])
+|> VegaLite.encode(:tooltip, [
+  [field: "vertex", type: :nominal],
+  [field: "degree", type: :quantitative],
+  [field: "neighbors_count", type: :quantitative]
+])
+```
+
+## Interactive Hypergraph Builder
+
+Create your own hypergraph by defining vertices and hyperedges:
+
+```elixir
+vertex_input = Kino.Input.text("Vertices (comma-separated)")
+hyperedge_input = Kino.Input.textarea("Hyperedges (one per line, vertices separated by commas)")
+
+form = Kino.Control.form([
+  vertices: vertex_input,
+  hyperedges: hyperedge_input
+], submit: "Create Hypergraph")
+
+Kino.render(form)
+
+# Store the current hypergraph for 3D visualization
+current_hypergraph = :ets.new(:current_hg, [:set, :public])
+
+custom_result = 
+  form
+  |> Kino.Control.stream()
+  |> Kino.animate(fn %{data: %{vertices: v_str, hyperedges: he_str}} ->
+    vertices = 
+      v_str
+      |> String.split(",")
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+    
+    hyperedges = 
+      he_str
+      |> String.split("\n")
+      |> Enum.map(fn line ->
+        line
+        |> String.split(",")
+        |> Enum.map(&String.trim/1)
+        |> Enum.reject(&(&1 == ""))
+      end)
+      |> Enum.reject(&(&1 == []))
+      |> Enum.map(&MapSet.new/1)
+    
+    hg = Hypergraph.new(vertices, hyperedges)
+    stats = Hypergraph.stats(hg)
+    
+    # Store for 3D visualization
+    :ets.insert(current_hypergraph, {:hypergraph, hg})
+    
+    Kino.Markdown.new("""
+    **Statistics:**
+    - Vertices: #{stats.vertex_count}
+    - Hyperedges: #{stats.hyperedge_count}
+    - Average Degree: #{Float.round(stats.avg_degree, 2)}
+    - Max Hyperedge Size: #{stats.max_hyperedge_size}
+    
+    **Vertices:** #{Enum.join(Hypergraph.vertices(hg), ", ")}
+    
+    **Hyperedges:**
+    #{hg |> Hypergraph.hyperedges() |> Enum.with_index() |> Enum.map(fn {he, idx} -> 
+      "- E#{idx}: {#{Enum.join(MapSet.to_list(he), ", ")}}"
+    end) |> Enum.join("\n")}
+    """)
+  end)
+
+```
+
+### 3D Hypergraph Visualization
+
+```elixir
+defmodule Hypergraph3D do
+  @doc """
+  Converts a hypergraph to 3D visualization data with vertex positions and hyperedge connections.
+  """
+  def to_3d_data(hypergraph) do
+    vertices = Hypergraph.vertices(hypergraph)
+    hyperedges = Hypergraph.hyperedges(hypergraph)
+    
+    # Position vertices in 3D space using spherical coordinates
+    vertex_count = length(vertices)
+    
+    vertex_positions = 
+      vertices
+      |> Enum.with_index()
+      |> Enum.map(fn {vertex, idx} ->
+        # Distribute vertices roughly evenly in 3D space
+        phi = :math.acos(-1 + 2 * idx / max(vertex_count - 1, 1))
+        theta = :math.sqrt(vertex_count * :math.pi()) * phi
+        radius = 150
+        
+        x = radius * :math.sin(phi) * :math.cos(theta)
+        y = radius * :math.sin(phi) * :math.sin(theta)
+        z = radius * :math.cos(phi)
+        
+        {vertex, {x, y, z}}
+      end)
+      |> Map.new()
+    
+    # Create hyperedge data with their vertex positions
+    hyperedge_data = 
+      hyperedges
+      |> Enum.with_index()
+      |> Enum.map(fn {hyperedge, idx} ->
+        vertex_list = MapSet.to_list(hyperedge)
+        positions = Enum.map(vertex_list, &Map.get(vertex_positions, &1))
+        
+        %{
+          id: idx,
+          vertices: vertex_list,
+          positions: positions,
+          size: MapSet.size(hyperedge),
+          color: get_hyperedge_color(idx)
+        }
+      end)
+    
+    %{
+      vertex_positions: vertex_positions,
+      hyperedges: hyperedge_data,
+      vertex_count: vertex_count,
+      hyperedge_count: length(hyperedges)
+    }
+  end
+  
+  defp get_hyperedge_color(idx) do
+    colors = [
+      "0xff6b6b", "0x4ecdc4", "0x45b7d1", "0x96ceb4", 
+      "0xffeaa7", "0xdda0dd", "0x98d8c8", "0xf7dc6f"
+    ]
+    Enum.at(colors, rem(idx, length(colors)))
+  end
+  
+  @doc """
+  Generates JavaScript code for 3D visualization using Three.js
+  """
+  def generate_3d_js(data) do
+    vertex_js = 
+      data.vertex_positions
+      |> Enum.map(fn {vertex, {x, y, z}} ->
+        "addVertex('#{vertex}', #{x}, #{y}, #{z})"
+      end)
+      |> Enum.join(";\n    ")
+    
+    hyperedge_js = 
+      data.hyperedges
+      |> Enum.map(fn %{id: id, positions: positions, color: color, vertices: vertices} ->
+        positions_str = 
+          positions
+          |> Enum.map(fn {x, y, z} -> "[#{x}, #{y}, #{z}]" end)
+          |> Enum.join(", ")
+        
+        vertices_str = Enum.join(vertices, ", ")
+        "addHyperedge(#{id}, [#{positions_str}], #{color}, '#{vertices_str}')"
+      end)
+      |> Enum.join(";\n    ")
+    
+    """
+    // Initialize 3D scene
+    initScene();
+    
+    // Add vertices
+    #{vertex_js};
+    
+    // Add hyperedges  
+    #{hyperedge_js};
+    
+    // Start animation
+    animate();
+    """
+  end
+end
+```
+
+Generate 3D visualization for the current hypergraph
+
+````elixir
+generate_3d_viz = fn ->
+  case :ets.lookup(current_hypergraph, :hypergraph) do
+    [{:hypergraph, hg}] ->
+      data_3d = Hypergraph3D.to_3d_data(hg)
+      js_code = Hypergraph3D.generate_3d_js(data_3d)
+      
+      Kino.HTML.new("""
+      <div id="3d-container" style="width: 800px; height: 600px; border: 2px solid #333; margin: 20px 0;"></div>
+      <div style="margin: 10px 0;">
+        <strong>Controls:</strong> Mouse to rotate • Scroll to zoom • Click vertex/hyperedge for info
+      </div>
+      
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+      <script>
+        let scene, camera, renderer, controls;
+        let vertices = {};
+        let hyperedges = [];
+        let selectedObject = null;
+        
+        function initScene() {
+          const container = document.getElementById('3d-container');
+          if (!container) return;
+          
+          // Clear previous content
+          container.innerHTML = '';
+          
+          // Scene setup
+          scene = new THREE.Scene();
+          scene.background = new THREE.Color(0x1a1a2e);
+          
+          // Camera
+          camera = new THREE.PerspectiveCamera(75, 800/600, 0.1, 2000);
+          camera.position.set(300, 300, 300);
+          
+          // Renderer
+          renderer = new THREE.WebGLRenderer({ antialias: true });
+          renderer.setSize(800, 600);
+          renderer.shadowMap.enabled = true;
+          renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+          container.appendChild(renderer.domElement);
+          
+          // Lighting
+          const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+          scene.add(ambientLight);
+          
+          const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+          directionalLight.position.set(100, 100, 50);
+          directionalLight.castShadow = true;
+          scene.add(directionalLight);
+          
+          // Mouse controls
+          setupMouseControls();
+        }
+        
+        function setupMouseControls() {
+          let isMouseDown = false;
+          let mouseX = 0, mouseY = 0;
+          let targetRotationX = 0, targetRotationY = 0;
+          let targetZoom = 300;
+          
+          renderer.domElement.addEventListener('mousedown', (event) => {
+            isMouseDown = true;
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+          });
+          
+          renderer.domElement.addEventListener('mouseup', () => {
+            isMouseDown = false;
+          });
+          
+          renderer.domElement.addEventListener('mousemove', (event) => {
+            if (!isMouseDown) return;
+            
+            const deltaX = event.clientX - mouseX;
+            const deltaY = event.clientY - mouseY;
+            
+            targetRotationY += deltaX * 0.01;
+            targetRotationX += deltaY * 0.01;
+            
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+          });
+          
+          renderer.domElement.addEventListener('wheel', (event) => {
+            targetZoom += event.deltaY * 0.5;
+            targetZoom = Math.max(100, Math.min(800, targetZoom));
+            event.preventDefault();
+          });
+          
+          // Smooth camera movement
+          function updateCamera() {
+            const radius = targetZoom;
+            camera.position.x = radius * Math.sin(targetRotationY) * Math.cos(targetRotationX);
+            camera.position.y = radius * Math.sin(targetRotationX);
+            camera.position.z = radius * Math.cos(targetRotationY) * Math.cos(targetRotationX);
+            camera.lookAt(0, 0, 0);
+          }
+          
+          setInterval(updateCamera, 16);
+        }
+        
+        function addVertex(name, x, y, z) {
+          const geometry = new THREE.SphereGeometry(8, 16, 16);
+          const material = new THREE.MeshLambertMaterial({ 
+            color: 0x00ff88,
+            transparent: true,
+            opacity: 0.9
+          });
+          const sphere = new THREE.Mesh(geometry, material);
+          
+          sphere.position.set(x, y, z);
+          sphere.castShadow = true;
+          sphere.userData = { type: 'vertex', name: name };
+          
+          // Add text label
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.width = 128;
+          canvas.height = 32;
+          context.fillStyle = 'white';
+          context.font = 'Bold 16px Arial';
+          context.fillText(name, 4, 20);
+          
+          const texture = new THREE.CanvasTexture(canvas);
+          const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+          const sprite = new THREE.Sprite(spriteMaterial);
+          sprite.position.set(x, y + 20, z);
+          sprite.scale.set(40, 10, 1);
+          
+          scene.add(sphere);
+          scene.add(sprite);
+          vertices[name] = sphere;
+        }
+        
+        function addHyperedge(id, positions, colorHex, vertexNames) {
+          if (positions.length < 2) return;
+          
+          const color = new THREE.Color(parseInt(colorHex));
+          
+          // Create wireframe connecting all vertices in the hyperedge
+          const points = positions.map(pos => new THREE.Vector3(pos[0], pos[1], pos[2]));
+          
+          // For hyperedges with 3+ vertices, create a convex hull-like visualization
+          if (positions.length >= 3) {
+            // Create edges between all pairs of vertices
+            for (let i = 0; i < points.length; i++) {
+              for (let j = i + 1; j < points.length; j++) {
+                const geometry = new THREE.BufferGeometry().setFromPoints([points[i], points[j]]);
+                const material = new THREE.LineBasicMaterial({ 
+                  color: color,
+                  transparent: true,
+                  opacity: 0.7,
+                  linewidth: 3
+                });
+                const line = new THREE.Line(geometry, material);
+                line.userData = { type: 'hyperedge', id: id, vertices: vertexNames };
+                scene.add(line);
+                hyperedges.push(line);
+              }
+            }
+            
+            // Add a semi-transparent face for 3+ vertex hyperedges
+            if (positions.length >= 3) {
+              const geometry = new THREE.BufferGeometry();
+              const vertices = new Float32Array(positions.flat());
+              geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+              
+              // Create triangular faces
+              const indices = [];
+              for (let i = 1; i < positions.length - 1; i++) {
+                indices.push(0, i, i + 1);
+              }
+              geometry.setIndex(indices);
+              geometry.computeVertexNormals();
+              
+              const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.2,
+                side: THREE.DoubleSide
+              });
+              
+              const mesh = new THREE.Mesh(geometry, material);
+              mesh.userData = { type: 'hyperedge', id: id, vertices: vertexNames };
+              scene.add(mesh);
+              hyperedges.push(mesh);
+            }
+          } else {
+            // For 2-vertex hyperedges, just draw a line
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ 
+              color: color,
+              linewidth: 4
+            });
+            const line = new THREE.Line(geometry, material);
+            line.userData = { type: 'hyperedge', id: id, vertices: vertexNames };
+            scene.add(line);
+            hyperedges.push(line);
+          }
+        }
+        
+        function animate() {
+          requestAnimationFrame(animate);
+          
+          // Gentle rotation animation
+          scene.rotation.y += 0.005;
+          
+          renderer.render(scene, camera);
+        }
+        
+        // Execute the generated code
+        #{js_code}
+      </script>
+      """)
+      
+    [] ->
+      Kino.Markdown.new("""
+      ## No Hypergraph Created Yet
+      
+      Please use the form above to create a hypergraph first, then run this cell to see the 3D visualization.
+      
+      **Example input:**
+      - Vertices: `A, B, C, D, E`
+      - Hyperedges: 
+        ```
+        A, B, C
+        B, D, E
+        A, E
+        ```
+      """)
+  end
+end
+
+generate_3d_viz.()
+````
+
+## Comparison: Hypergraph vs Regular Graph
+
+See how the same data looks as a hypergraph vs a regular graph:
+
+```elixir
+# Compare bipartite hypergraph view with regular graph projection
+regular_data = HypergraphViz.to_graph_data(social_hg)
+
+VegaLite.new(width: 600, height: 400, title: "Social Network as Regular Graph (Projected)")
+|> VegaLite.data_from_values(regular_data.nodes)
+|> VegaLite.mark(:circle, size: 300, stroke: "black", strokeWidth: 2)
+|> VegaLite.encode_field(:x, "x", type: :quantitative, scale: [domain: [0, 600]])
+|> VegaLite.encode_field(:y, "y", type: :quantitative, scale: [domain: [0, 600]])
+|> VegaLite.encode_field(:color, "degree", type: :quantitative, scale: [scheme: "category10"])
+|> VegaLite.encode(:tooltip, [
+  [field: "label", type: :nominal],
+  [field: "degree", type: :quantitative]
+])
+```
+
+## Hyperedge Size Distribution
+
+Analyze hyperedge sizes across different hypergraphs:
+
+```elixir
+all_hypergraphs = [
+  {"Social Network", social_hg},
+  {"Chemical Reactions", chemical_hg}
+]
+
+size_distribution = 
+  all_hypergraphs
+  |> Enum.flat_map(fn {name, hg} ->
+    hg
+    |> Hypergraph.hyperedges()
+    |> Enum.map(fn hyperedge ->
+      %{
+        hypergraph: name,
+        size: MapSet.size(hyperedge)
+      }
+    end)
+  end)
+
+VegaLite.new(width: 400, height: 250, title: "Hyperedge Size Distribution")
+|> VegaLite.data_from_values(size_distribution)
+|> VegaLite.mark(:bar)
+|> VegaLite.encode_field(:x, "size", type: :ordinal, axis: [title: "Hyperedge Size"])
+|> VegaLite.encode_field(:y, "hypergraph", type: :nominal, aggregate: :count)
+|> VegaLite.encode_field(:color, "hypergraph", type: :nominal)
+|> VegaLite.encode_field(:tooltip, "hypergraph", type: :nominal)
+```
