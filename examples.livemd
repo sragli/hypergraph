@@ -44,7 +44,8 @@ chemical_hg =
 defmodule HypergraphViz do
   @doc """
   Converts a hypergraph to data suitable for VegaLite network visualization.
-  Creates a bipartite representation where vertices and hyperedges are shown as different node types.
+  Creates a bipartite representation where vertices and hyperedges are shown
+  as different node types.
   """
   def to_bipartite_data(hypergraph) do
     vertices = Hypergraph.vertices(hypergraph)
@@ -154,8 +155,11 @@ Visualize the social network hypergraph:
 social_data = HypergraphViz.to_bipartite_data(social_hg)
 ```
 
+Shows vertices (circles) and hyperedges (squares) as separate node types (bipartite view):
+
 ```elixir
-VegaLite.new(width: 650, height: 450, title: "Social Network Hypergraph (Bipartite View)")
+VegaLite.new(width: 650, height: 450,
+  title: "Social Network Hypergraph (Bipartite View)")
 |> VegaLite.data_from_values(social_data.nodes)
 |> VegaLite.mark(:circle, size: 200, stroke: "black", strokeWidth: 2)
 |> VegaLite.encode_field(:x, "x", type: :quantitative, scale: [domain: [0, 800]])
@@ -213,7 +217,8 @@ VegaLite.new(width: 650, height: 300, title: "Vertex Degrees in Social Network")
 |> VegaLite.mark(:bar)
 |> VegaLite.encode_field(:x, "vertex", type: :nominal, axis: [title: "Vertex"])
 |> VegaLite.encode_field(:y, "degree", type: :quantitative, axis: [title: "Degree"])
-|> VegaLite.encode_field(:color, "degree", type: :quantitative, scale: [scheme: "blues"])
+|> VegaLite.encode_field(:color, "degree", type: :quantitative,
+  scale: [scheme: "blues"])
 |> VegaLite.encode(:tooltip, [
   [field: "vertex", type: :nominal],
   [field: "degree", type: :quantitative],
@@ -290,7 +295,8 @@ custom_result =
 ```elixir
 defmodule Hypergraph3D do
   @doc """
-  Converts a hypergraph to 3D visualization data with vertex positions and hyperedge connections.
+  Converts a hypergraph to 3D visualization data with vertex positions and
+  hyperedge connections.
   """
   def to_3d_data(hypergraph) do
     vertices = Hypergraph.vertices(hypergraph)
@@ -637,12 +643,14 @@ See how the same data looks as a hypergraph vs a regular graph:
 # Compare bipartite hypergraph view with regular graph projection
 regular_data = HypergraphViz.to_graph_data(social_hg)
 
-VegaLite.new(width: 600, height: 400, title: "Social Network as Regular Graph (Projected)")
+VegaLite.new(width: 600, height: 400,
+  title: "Social Network as Regular Graph (Projected)")
 |> VegaLite.data_from_values(regular_data.nodes)
 |> VegaLite.mark(:circle, size: 300, stroke: "black", strokeWidth: 2)
 |> VegaLite.encode_field(:x, "x", type: :quantitative, scale: [domain: [0, 600]])
 |> VegaLite.encode_field(:y, "y", type: :quantitative, scale: [domain: [0, 600]])
-|> VegaLite.encode_field(:color, "degree", type: :quantitative, scale: [scheme: "category10"])
+|> VegaLite.encode_field(:color, "degree", type: :quantitative,
+  scale: [scheme: "category10"])
 |> VegaLite.encode(:tooltip, [
   [field: "label", type: :nominal],
   [field: "degree", type: :quantitative]
