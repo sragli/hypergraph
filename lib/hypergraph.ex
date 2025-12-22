@@ -114,17 +114,17 @@ defmodule Hypergraph do
   @doc """
   Returns all vertices in the hypergraph.
   """
-  @spec vertices(t()) :: [vertex()]
+  @spec vertices(t()) :: MapSet.t(vertex())
   def vertices(%__MODULE__{} = hypergraph) do
-    MapSet.to_list(hypergraph.vertices)
+    hypergraph.vertices
   end
 
   @doc """
   Returns all hyperedges in the hypergraph.
   """
-  @spec hyperedges(t()) :: [MapSet.t(vertex())]
+  @spec hyperedges(t()) :: MapSet.t(MapSet.t(vertex()))
   def hyperedges(%__MODULE__{} = hypergraph) do
-    MapSet.to_list(hypergraph.hyperedges)
+    hypergraph.hyperedges
   end
 
   @doc """
@@ -139,13 +139,12 @@ defmodule Hypergraph do
   @doc """
   Returns all vertices that share at least one hyperedge with the given vertex.
   """
-  @spec neighbors(t(), vertex()) :: [vertex()]
+  @spec neighbors(t(), vertex()) :: MapSet.t(vertex())
   def neighbors(%__MODULE__{} = hypergraph, vertex) do
     hypergraph.hyperedges
     |> Enum.filter(&MapSet.member?(&1, vertex))
     |> Enum.reduce(MapSet.new(), &MapSet.union/2)
     |> MapSet.delete(vertex)
-    |> MapSet.to_list()
   end
 
   @doc """

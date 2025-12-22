@@ -51,7 +51,7 @@ defmodule HypergraphTest do
       |> Hypergraph.add_vertex(:two)
 
     assert Hypergraph.vertex_count(hg) == 2
-    assert length(Hypergraph.vertices(hg)) == 2
+    assert MapSet.size(Hypergraph.vertices(hg)) == 2
   end
 
   test "returns the number of edges in a hypergraph" do
@@ -63,7 +63,7 @@ defmodule HypergraphTest do
       |> Hypergraph.add_hyperedge([:one, :one])
 
     assert Hypergraph.hyperedge_count(hg) == 2
-    assert length(Hypergraph.hyperedges(hg)) == 2
+    assert MapSet.size(Hypergraph.hyperedges(hg)) == 2
   end
 
   test "computes the degree of a vertex" do
@@ -83,7 +83,7 @@ defmodule HypergraphTest do
       |> Hypergraph.add_vertices([:one, :two, :three])
       |> Hypergraph.add_hyperedge([:one, :two])
 
-    assert Hypergraph.neighbors(hg, :one) == [:two]
+    assert Hypergraph.neighbors(hg, :one) == MapSet.new([:two])
   end
 
   test "checks if two vertices are connected" do
