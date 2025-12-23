@@ -875,4 +875,136 @@ defmodule Hypergraph.WolframCausalGraph do
     }
     """
   end
+
+  @spec to_svg(t(), keyword()) :: String.t()
+  def to_svg(%__MODULE__{} = cg, opts \\ []) do
+    defaults = %{node_radius: 20, x_gap: 100, y_gap: 100, margin: 50}
+    opts = Map.merge(defaults, Enum.into(opts, %{}))
+
+    # Convert dependency map (to => MapSet.froms) into a list of {from, to} tuples
+    edges =
+      cg.dependencies
+      |> Enum.flat_map(fn {to, froms} ->
+        froms |> MapSet.to_list() |> Enum.map(fn from -> {from, to} end)
+      end)
+
+    layout = layout(cg.events, edges, opts)
+    render_svg(layout, edges, opts)
+  end
+
+  # Layout (layered DAG) — expects edges as [{from, to}]
+  defp layout(nodes, edges, opts) do
+    incoming =
+      Enum.reduce(edges, %{}, fn {_, b}, acc ->
+        Map.update(acc, b, 1, &(&1 + 1))
+      end)
+
+    roots = nodes |> Enum.filter(&(Map.get(incoming, &1, 0) == 0)) |> Enum.to_list()
+    roots = if roots == [], do: Enum.to_list(nodes), else: roots
+
+    layers = build_layers(roots, edges, %{}, 0, MapSet.new())
+
+    positions =
+      layers
+      |> Enum.flat_map(fn {depth, nodes_at_depth} ->
+        nodes_at_depth
+        |> Enum.with_index()
+        |> Enum.map(fn {node, i} ->
+          {node,
+           %{
+             x: opts.margin + i * opts.x_gap,
+             y: opts.margin + depth * opts.y_gap
+           }}
+        end)
+      end)
+      |> Map.new()
+
+    positions
+  end
+
+  # Avoid revisiting nodes in cycles
+  defp build_layers([], _edges, acc, _depth, _visited), do: acc
+
+  defp build_layers(nodes, edges, acc, depth, visited) do
+    nodes_unique = Enum.reject(nodes, &MapSet.member?(visited, &1))
+    acc = Map.update(acc, depth, nodes_unique, &(&1 ++ nodes_unique))
+    visited = Enum.reduce(nodes_unique, visited, &MapSet.put(&2, &1))
+
+    next =
+      edges
+      |> Enum.filter(fn {a, _b} -> a in nodes_unique end)
+      |> Enum.map(fn {_a, b} -> b end)
+      |> Enum.uniq()
+
+    build_layers(next, edges, acc, depth + 1, visited)
+  end
+
+  defp render_svg(positions, edges, opts) do
+    {width, height} = svg_size(positions, opts)
+
+    """
+    <svg xmlns="http://www.w3.org/2000/svg"
+         width="#{width}"
+         height="#{height}"
+         viewBox="0 0 #{width} #{height}">
+      <defs>
+        <marker id="arrow"
+                markerWidth="10"
+                markerHeight="10"
+                refX="10"
+                refY="3"
+                orient="auto"
+                markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+        </marker>
+      </defs>
+
+      #{render_edges(edges, positions, opts)}
+      #{render_nodes(positions, opts)}
+    </svg>
+    """
+  end
+
+  defp svg_size(positions, opts) do
+    xs = Enum.map(positions, fn {_k, v} -> v.x end)
+    ys = Enum.map(positions, fn {_k, v} -> v.y end)
+
+    if xs == [] or ys == [] do
+      {opts.margin * 2, opts.margin * 2}
+    else
+      {Enum.max(xs) + opts.margin, Enum.max(ys) + opts.margin}
+    end
+  end
+
+  defp render_edges(edges, pos, _opts) do
+    edges
+    |> Enum.filter(fn {a, b} -> Map.has_key?(pos, a) and Map.has_key?(pos, b) end)
+    |> Enum.map_join("\n", fn {a, b} ->
+      %{x: x1, y: y1} = pos[a]
+      %{x: x2, y: y2} = pos[b]
+
+      """
+      <line x1="#{x1}" y1="#{y1}"
+            x2="#{x2}" y2="#{y2}"
+            stroke="#555"
+            stroke-width="2"
+            marker-end="url(#arrow)" />
+      """
+    end)
+  end
+
+  defp render_nodes(positions, opts) do
+    Enum.map_join(positions, "\n", fn {id, %{x: x, y: y}} ->
+      """
+      <g>
+        <circle cx="#{x}" cy="#{y}" r="#{opts.node_radius}"
+                fill="#1f77b4" stroke="white" stroke-width="2"/>
+        <text x="#{x}" y="#{y + 4}"
+              text-anchor="middle"
+              font-size="12"
+              fill="white">#{id}</text>
+      </g>
+      """
+    end)
+  end
 end

@@ -207,4 +207,27 @@ defmodule Hypergraph.WolframCausalGraphTest do
     # transitive
     assert WolframCausalGraph.is_causal_predecessor?(cg, :x, :z)
   end
+
+  test "to_svg produces an SVG for a simple DAG" do
+    hg = Hypergraph.new() |> Hypergraph.add_hyperedge([:a, :b, :c])
+    cg = WolframCausalGraph.from_hypergraph(hg)
+    svg = WolframCausalGraph.to_svg(cg)
+    assert is_binary(svg)
+    assert String.starts_with?(String.trim(svg), "<svg")
+    assert String.contains?(svg, "<circle")
+    assert String.contains?(svg, "<line")
+  end
+
+  test "to_svg handles cycles without crashing" do
+    cyc =
+      WolframCausalGraph.new()
+      |> WolframCausalGraph.add_event(:x)
+      |> WolframCausalGraph.add_event(:y)
+      |> WolframCausalGraph.add_dependency(:x, :y)
+      |> WolframCausalGraph.add_dependency(:y, :x)
+
+    svg = WolframCausalGraph.to_svg(cyc)
+    assert is_binary(svg)
+    assert String.starts_with?(String.trim(svg), "<svg")
+  end
 end

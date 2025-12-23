@@ -76,4 +76,8 @@ cg = cg
 WolframCausalGraph.ancestors(cg, :e3)  # [:e1, :e2]
 WolframCausalGraph.is_causal_predecessor?(cg, :e1, :e3)  # true
 WolframCausalGraph.causal_depth(cg, :e3)  # 2
+
+# Visualize the causal graph
+WolframCausalGraph.to_dot()  # DOT digraph
+WolframCausalGraph.to_svg()  # SVG source
 ```
