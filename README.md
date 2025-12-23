@@ -1,6 +1,6 @@
 # Hypergraph
 
-Elixir module for working with hypergraphs.
+Elixir library for working with hypergraphs.
 
 A hypergraph is a generalization of a regular graph where edges can connect more than two
 vertices at once.
@@ -33,11 +33,9 @@ be found at <https://hexdocs.pm/hypergraph>.
 
 ## Core Features
 
-* Create new hypergraphs (empty or with initial data)
-* Add/remove vertices and hyperedges
-* Query hypergraph properties and relationships
-* Measure how far structural information propagates in the hypergraph
-* Create Wolfram-style causal graph from scratch or by transforming a hypergraph into it
+* `Hypergraph` - Create, update and query hypergraphs
+* `CorrelationLength` - Measure Correlation Length (how far structural information propagates) in a hypergraph
+* `WolframCausalGraph` - Create Wolfram-style causal graph from scratch or by transforming a hypergraph
 
 ## Usage Examples
 
@@ -74,7 +72,7 @@ cg = cg
       |> WolframCausalGraph.add_dependency(:e1, :e2)
       |> WolframCausalGraph.add_dependency(:e2, :e3)
 
-# Query the graph
+# Query the causal graph
 WolframCausalGraph.ancestors(cg, :e3)  # [:e1, :e2]
 WolframCausalGraph.is_causal_predecessor?(cg, :e1, :e3)  # true
 WolframCausalGraph.causal_depth(cg, :e3)  # 2
