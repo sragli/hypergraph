@@ -43,6 +43,7 @@ defmodule Hypergraph.MixProject do
 
   defp deps do
     [
+      {:vega_lite, "~> 0.1"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
     ]
   end
