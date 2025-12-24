@@ -22,20 +22,17 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 ```elixir
 def deps do
   [
-    {:hypergraph, "~> 0.1.0"}
+    {:hypergraph, "~> 0.2.0"}
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/hypergraph>.
 
 ## Core Features
 
 * `Hypergraph` - Create, update and query hypergraphs
 * `CorrelationLength` - Measure Correlation Length (how far structural information propagates) in a hypergraph
 * `WolframCausalGraph` - Create Wolfram-style causal graph from scratch or by transforming a hypergraph
+* `NetworkGraph` - Create a VegaLite-based network graph representation from a hypergraph
 
 ## Usage Examples
 
