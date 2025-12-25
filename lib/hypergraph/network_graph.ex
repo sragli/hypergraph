@@ -74,27 +74,24 @@ defmodule Hypergraph.NetworkGraph do
     hg.vertices
     |> MapSet.to_list()
     |> Enum.map(fn v ->
-        {
-          v,
-          hg.hyperedges
-          |> MapSet.to_list()
-          |> Enum.count(fn edge -> MapSet.member?(edge, v) end)
-        }
-      end)
-    |> Enum.map(fn {v, d} ->
+      d = Hypergraph.degree(hg, v)
       {x, y} = Map.get(layout, v)
+
       %{
         "id" => v,
         "x" => x,
         "y" => y,
         "degree" => d,
-        "size" => 100 + d * 20  # Scale node size by degree
+        "size" => 100 + d * 20
       }
     end)
   end
 
+  defp create_circular_layout([], _radius), do: %{}
+
   defp create_circular_layout(vertices, radius) do
     n = length(vertices)
+
     vertices
     |> Enum.with_index()
     |> Enum.map(fn {v, i} ->
