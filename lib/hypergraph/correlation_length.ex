@@ -20,7 +20,12 @@ defmodule WolframModel.CorrelationLength do
   - {:ok, correlation_length} | {:error, reason}
   """
   @spec compute(Hypergraph.t(), pos_integer(), pos_integer(), pos_integer()) ::
-          {:ok, number()} | {:error, atom()}
+          {:ok, float()} | {:error,
+           :insufficient_data
+           | :insufficient_points
+           | :insufficient_positive_data
+           | :no_decay
+           | :singular_matrix}
   def compute(hypergraph, max_distance \\ 10, region_size \\ 5, samples \\ 100) do
     # Pre-compute expensive operations once
     vertex_set = Hypergraph.vertices(hypergraph)
