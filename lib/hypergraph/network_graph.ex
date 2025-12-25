@@ -1,6 +1,20 @@
 defmodule Hypergraph.NetworkGraph do
+  @moduledoc """
+  Utilities to render a `Hypergraph` as a network graph using `VegaLite`.
+
+  The visualization places vertices on a circular layout and draws lines
+  between vertices that share a hyperedge. Node size and color reflect
+  vertex degree (number of incident hyperedges).
+  """
   alias Hypergraph
-  
+
+  @doc """
+  Render the hypergraph as a `VegaLite` visualization.
+
+  Returns a `VegaLite` specification representing the network graph.
+  Vertices are placed on a circular layout; edges are rendered as lines
+  and nodes as circles sized & colored by degree.
+  """
   @spec visualize(Hypergraph.t()) :: VegaLite.t()
   def visualize(hg) do
     layout =
