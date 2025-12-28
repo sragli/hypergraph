@@ -112,7 +112,7 @@ defmodule HypergraphViz do
     edges = Hypergraph.to_graph(hypergraph)
     
     # Position vertices in a circle
-    vertex_count = length(vertices)
+    vertex_count = MapSet.size(vertices)
     angle_step = 2 * :math.pi() / max(vertex_count, 1)
     
     vertex_nodes = 
@@ -208,7 +208,7 @@ degree_data =
     %{
       vertex: vertex,
       degree: Hypergraph.degree(social_hg, vertex),
-      neighbors_count: length(Hypergraph.neighbors(social_hg, vertex))
+      neighbors_count: MapSet.size(Hypergraph.neighbors(social_hg, vertex))
     }
   end)
 
