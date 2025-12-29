@@ -1,6 +1,6 @@
 defmodule WolframModel.CorrelationLengthTest do
   use ExUnit.Case, async: true
-  alias WolframModel.CorrelationLength
+  alias Hypergraph.CorrelationLength
   alias Hypergraph
 
   test "compute returns error tuple for tiny hypergraph" do
