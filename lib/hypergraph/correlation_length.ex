@@ -20,12 +20,13 @@ defmodule Hypergraph.CorrelationLength do
   - {:ok, correlation_length} | {:error, reason}
   """
   @spec compute(Hypergraph.t(), pos_integer(), pos_integer(), pos_integer()) ::
-          {:ok, float()} | {:error,
-           :insufficient_data
-           | :insufficient_points
-           | :insufficient_positive_data
-           | :no_decay
-           | :singular_matrix}
+          {:ok, float()}
+          | {:error,
+             :insufficient_data
+             | :insufficient_points
+             | :insufficient_positive_data
+             | :no_decay
+             | :singular_matrix}
   def compute(hypergraph, max_distance \\ 10, region_size \\ 5, samples \\ 100) do
     # Pre-compute expensive operations once
     vertex_set = Hypergraph.vertices(hypergraph)
@@ -160,7 +161,7 @@ defmodule Hypergraph.CorrelationLength do
         new_visited = MapSet.union(visited, new_neighbors)
 
         bfs_distance_search(
-          rest ++ new_queue,
+          new_queue ++ rest,
           new_visited,
           adjacency_map,
           target_distance,
@@ -216,36 +217,28 @@ defmodule Hypergraph.CorrelationLength do
     end
   end
 
-  # Mutual Information calculation using frequency maps.
+  # Mutual Information calculation using paired observations.
   defp calculate_mutual_info_from_features(features1, features2) do
-    # Pre-compute frequencies
-    freq1 = Enum.frequencies(features1)
-    freq2 = Enum.frequencies(features2)
+    pairs = Enum.zip(features1, features2)
+    n = length(pairs)
 
-    n1 = length(features1)
-    n2 = length(features2)
-    total = n1 * n2
+    if n == 0 do
+      0.0
+    else
+      joint_freq = Enum.frequencies(pairs)
+      freq1 = Enum.frequencies(Enum.map(pairs, &elem(&1, 0)))
+      freq2 = Enum.frequencies(Enum.map(pairs, &elem(&1, 1)))
 
-    joint_freq =
-      for f1 <- Map.keys(freq1), f2 <- Map.keys(freq2), into: %{} do
-        joint_count = freq1[f1] * freq2[f2]
-        {{f1, f2}, joint_count}
-      end
-
-    # Calculate MI using pre-computed frequencies
-    joint_freq
-    |> Enum.reduce(0.0, fn {{f1, f2}, joint_count}, acc ->
-      if joint_count > 0 do
-        joint_prob = joint_count / total
-        marginal_prob1 = freq1[f1] / n1
-        marginal_prob2 = freq2[f2] / n2
+      joint_freq
+      |> Enum.reduce(0.0, fn {{f1, f2}, joint_count}, acc ->
+        joint_prob = joint_count / n
+        marginal_prob1 = freq1[f1] / n
+        marginal_prob2 = freq2[f2] / n
 
         mi_contribution = joint_prob * :math.log(joint_prob / (marginal_prob1 * marginal_prob2))
         acc + mi_contribution
-      else
-        acc
-      end
-    end)
+      end)
+    end
   end
 
   defp fit_exponential_decay(data_points) when length(data_points) < 3 do
