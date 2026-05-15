@@ -31,7 +31,6 @@ end
 
 * `Hypergraph` - Create, update and query hypergraphs
 * `CorrelationLength` - Measure Correlation Length (how far structural information propagates) in a hypergraph
-* `WolframCausalGraph` - Create Wolfram-style causal graph from scratch or by transforming a hypergraph
 * `NetworkGraph` - Create a VegaLite-based network graph representation from a hypergraph
 
 ## Usage Examples
@@ -51,30 +50,4 @@ Hypergraph.degree(hg, :bob)                    # How many hyperedges contain Bob
 Hypergraph.neighbors(hg, :alice)               # Who shares hyperedges with Alice?
 Hypergraph.connected?(hg, :alice, :charlie)    # Are Alice and Charlie connected?
 Hypergraph.stats(hg)
-
-# Transform the hypergraph to a causal graph
-cg = WolframCausalGraph.from_hypergraph(hg)
-
-# Create a new causal graph
-cg = WolframCausalGraph.new()
-
-# Add events
-cg = cg
-      |> WolframCausalGraph.add_event(:e1, %{rule: :rule_a, timestamp: 0})
-      |> WolframCausalGraph.add_event(:e2, %{rule: :rule_b, timestamp: 1})
-      |> WolframCausalGraph.add_event(:e3, %{rule: :rule_a, timestamp: 2})
-
-# Add causal dependencies (e2 depends on e1, e3 depends on e2)
-cg = cg
-      |> WolframCausalGraph.add_dependency(:e1, :e2)
-      |> WolframCausalGraph.add_dependency(:e2, :e3)
-
-# Query the causal graph
-WolframCausalGraph.ancestors(cg, :e3)  # [:e1, :e2]
-WolframCausalGraph.is_causal_predecessor?(cg, :e1, :e3)  # true
-WolframCausalGraph.causal_depth(cg, :e3)  # 2
-
-# Visualize the causal graph
-WolframCausalGraph.to_dot()  # DOT digraph
-WolframCausalGraph.to_svg()  # SVG source
 ```
