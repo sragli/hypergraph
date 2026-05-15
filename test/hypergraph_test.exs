@@ -6,7 +6,7 @@ defmodule HypergraphTest do
     hg = Hypergraph.new()
     assert is_map(hg.vertices)
     assert hg.vertices == MapSet.new([])
-    assert hg.hyperedges == MapSet.new([])
+    assert hg.hyperedges == []
   end
 
   test "creates a hypergraph with two vertices and an edge between them" do
@@ -17,7 +17,7 @@ defmodule HypergraphTest do
       |> Hypergraph.add_hyperedge([:one, :two])
 
     assert hg.vertices == MapSet.new([:one, :two])
-    assert hg.hyperedges == MapSet.new([MapSet.new([:one, :two])])
+    assert hg.hyperedges == [[:one, :two]]
   end
 
   test "removes an edge from a hypergraph" do
@@ -29,7 +29,7 @@ defmodule HypergraphTest do
       |> Hypergraph.remove_hyperedge([:one, :two])
 
     assert hg.vertices == MapSet.new([:one, :two, :three])
-    assert hg.hyperedges == MapSet.new([MapSet.new([:two, :three])])
+    assert hg.hyperedges == [[:two, :three]]
   end
 
   test "removes a vertex from a hypergraph" do
@@ -41,7 +41,7 @@ defmodule HypergraphTest do
       |> Hypergraph.remove_vertex(:two)
 
     assert hg.vertices == MapSet.new([:one])
-    assert hg.hyperedges == MapSet.new([MapSet.new([:one])])
+    assert hg.hyperedges == [[:one]]
   end
 
   test "returns the number of vertices in a hypergraph" do
@@ -63,7 +63,7 @@ defmodule HypergraphTest do
       |> Hypergraph.add_hyperedge([:one, :one])
 
     assert Hypergraph.hyperedge_count(hg) == 2
-    assert MapSet.size(Hypergraph.hyperedges(hg)) == 2
+    assert length(Hypergraph.hyperedges(hg)) == 2
   end
 
   test "computes the degree of a vertex" do
@@ -74,7 +74,7 @@ defmodule HypergraphTest do
       |> Hypergraph.add_hyperedge([:one, :two])
       |> Hypergraph.add_hyperedge([:two, :one])
 
-    assert Hypergraph.degree(hg, :one) == 1
+    assert Hypergraph.degree(hg, :one) == 2
   end
 
   test "calculates the number of neighbors of a vertex" do

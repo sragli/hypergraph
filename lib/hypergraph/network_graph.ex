@@ -32,7 +32,6 @@ defmodule Hypergraph.NetworkGraph do
       |> VegaLite.encode_field(:y, "y", type: :quantitative, axis: nil)
       |> VegaLite.encode_field(:x2, "x2")
       |> VegaLite.encode_field(:y2, "y2"),
-
       VegaLite.new()
       |> VegaLite.data_from_values(node_data(hg, layout))
       |> VegaLite.mark(:circle, opacity: 0.9, stroke: "#fff", stroke_width: 2)
@@ -44,27 +43,27 @@ defmodule Hypergraph.NetworkGraph do
       |> VegaLite.encode(:tooltip, [
         [field: "id", type: :nominal, title: "Vertex"],
         [field: "degree", type: :quantitative, title: "Degree"]
-      ]),
+      ])
     ])
   end
 
   defp edge_data(hg, layout) do
     hg.hyperedges
-    |> MapSet.to_list()
     |> Enum.with_index(1)
     |> Enum.flat_map(fn {edge, edge_id} ->
-      vertices = MapSet.to_list(edge) |> Enum.sort()
+      vertices = Enum.sort(edge)
       # Create all pairwise connections within each hyperedge
       for v1 <- vertices, v2 <- vertices, v1 < v2 do
         {x1, y1} = Map.get(layout, v1)
         {x2, y2} = Map.get(layout, v2)
+
         %{
           "x" => x1,
           "y" => y1,
           "x2" => x2,
           "y2" => y2,
           "edge_id" => edge_id,
-          "size" => MapSet.size(edge)
+          "size" => length(edge)
         }
       end
     end)

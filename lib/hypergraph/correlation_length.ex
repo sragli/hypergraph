@@ -61,7 +61,7 @@ defmodule Hypergraph.CorrelationLength do
       hyperedge
       |> Enum.reduce(acc, fn vertex, acc2 ->
         # Remove self
-        neighbors = MapSet.delete(hyperedge, vertex)
+        neighbors = List.delete(hyperedge, vertex)
 
         Map.update(acc2, vertex, MapSet.new(neighbors), fn existing ->
           MapSet.union(existing, MapSet.new(neighbors))
