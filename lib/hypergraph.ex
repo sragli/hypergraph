@@ -6,12 +6,11 @@ defmodule Hypergraph do
   can connect any number of vertices, not just two.
   """
 
-  defstruct vertices: MapSet.new(), hyperedges: []
+  defstruct hyperedges: []
 
   @type vertex :: any()
   @type hyperedge :: [vertex()]
   @type t :: %__MODULE__{
-          vertices: MapSet.t(vertex()),
           hyperedges: [hyperedge()]
         }
 
@@ -27,37 +26,8 @@ defmodule Hypergraph do
   Creates a new hypergraph with the given vertices and hyperedges.
   """
   @spec new([vertex()], [hyperedge()]) :: t()
-  def new(vertices, hyperedges) do
-    vertex_set = MapSet.new(vertices)
-
-    # Ensure all vertices in hyperedges are in the vertex set
-    all_hyperedge_vertices =
-      hyperedges
-      |> Enum.reduce(MapSet.new(), fn edge, acc -> MapSet.union(acc, MapSet.new(edge)) end)
-
-    final_vertices = MapSet.union(vertex_set, all_hyperedge_vertices)
-
-    %__MODULE__{
-      vertices: final_vertices,
-      hyperedges: hyperedges
-    }
-  end
-
-  @doc """
-  Adds a vertex to the hypergraph.
-  """
-  @spec add_vertex(t(), vertex()) :: t()
-  def add_vertex(%__MODULE__{} = hypergraph, vertex) do
-    %{hypergraph | vertices: MapSet.put(hypergraph.vertices, vertex)}
-  end
-
-  @doc """
-  Adds multiple vertices to the hypergraph.
-  """
-  @spec add_vertices(t(), [vertex()]) :: t()
-  def add_vertices(%__MODULE__{} = hypergraph, vertices) do
-    new_vertices = MapSet.union(hypergraph.vertices, MapSet.new(vertices))
-    %{hypergraph | vertices: new_vertices}
+  def new(_vertices, hyperedges) do
+    %__MODULE__{hyperedges: hyperedges}
   end
 
   @doc """
@@ -66,10 +36,7 @@ defmodule Hypergraph do
   """
   @spec add_hyperedge(t(), hyperedge()) :: t()
   def add_hyperedge(%__MODULE__{} = hypergraph, vertices) when is_list(vertices) do
-    new_vertices = MapSet.union(hypergraph.vertices, MapSet.new(vertices))
-    new_hyperedges = hypergraph.hyperedges ++ [vertices]
-
-    %{hypergraph | vertices: new_vertices, hyperedges: new_hyperedges}
+    %{hypergraph | hyperedges: hypergraph.hyperedges ++ [vertices]}
   end
 
   @doc """
@@ -77,15 +44,12 @@ defmodule Hypergraph do
   """
   @spec remove_vertex(t(), vertex()) :: t()
   def remove_vertex(%__MODULE__{} = hypergraph, vertex) do
-    new_vertices = MapSet.delete(hypergraph.vertices, vertex)
-
-    # Remove vertex from each hyperedge and filter out empty hyperedges
     new_hyperedges =
       hypergraph.hyperedges
       |> Enum.map(&List.delete(&1, vertex))
       |> Enum.reject(&(&1 == []))
 
-    %{hypergraph | vertices: new_vertices, hyperedges: new_hyperedges}
+    %{hypergraph | hyperedges: new_hyperedges}
   end
 
   @doc """
@@ -102,7 +66,9 @@ defmodule Hypergraph do
   """
   @spec vertices(t()) :: MapSet.t(vertex())
   def vertices(%__MODULE__{} = hypergraph) do
-    hypergraph.vertices
+    Enum.reduce(hypergraph.hyperedges, MapSet.new(), fn edge, acc ->
+      MapSet.union(acc, MapSet.new(edge))
+    end)
   end
 
   @doc """
@@ -166,7 +132,7 @@ defmodule Hypergraph do
   """
   @spec vertex_count(t()) :: non_neg_integer()
   def vertex_count(%__MODULE__{} = hypergraph) do
-    MapSet.size(hypergraph.vertices)
+    hypergraph |> vertices() |> MapSet.size()
   end
 
   @doc """
@@ -199,7 +165,7 @@ defmodule Hypergraph do
   @spec stats(t()) :: map()
   def stats(%__MODULE__{} = hypergraph) do
     hyperedge_sizes = Enum.map(hypergraph.hyperedges, &length/1)
-    degrees = Enum.map(hypergraph.vertices, &degree(hypergraph, &1))
+    degrees = hypergraph |> vertices() |> Enum.map(&degree(hypergraph, &1))
 
     %{
       vertex_count: vertex_count(hypergraph),

@@ -18,7 +18,7 @@ defmodule Hypergraph.NetworkGraph do
   @spec visualize(Hypergraph.t()) :: VegaLite.t()
   def visualize(hg) do
     layout =
-      hg.vertices
+      Hypergraph.vertices(hg)
       |> MapSet.to_list()
       |> Enum.sort()
       |> create_circular_layout(200)
@@ -70,7 +70,7 @@ defmodule Hypergraph.NetworkGraph do
   end
 
   defp node_data(hg, layout) do
-    hg.vertices
+    Hypergraph.vertices(hg)
     |> MapSet.to_list()
     |> Enum.map(fn v ->
       d = Hypergraph.degree(hg, v)

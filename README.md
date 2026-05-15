@@ -16,13 +16,10 @@ entities at once.
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed by adding
-`hypergraph` to your list of dependencies in `mix.exs`:
-
 ```elixir
 def deps do
   [
-    {:hypergraph, "~> 0.2.0"}
+    {:hypergraph, "~> 1.0.0"}
   ]
 end
 ```

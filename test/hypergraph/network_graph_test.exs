@@ -17,7 +17,7 @@ defmodule Hypergraph.NetworkGraphTest do
   end
 
   test "single vertex has correct degree and size" do
-    hg = Hypergraph.new([:a], [])
+    hg = Hypergraph.new() |> Hypergraph.add_hyperedge([:a])
 
     spec = VegaLite.to_spec(NetworkGraph.visualize(hg))
     layers = spec["layer"]
@@ -28,7 +28,7 @@ defmodule Hypergraph.NetworkGraphTest do
 
     node = hd(values)
     assert node["id"] == :a
-    assert node["degree"] == 0
-    assert node["size"] == 100
+    assert node["degree"] == 1
+    assert node["size"] == 120
   end
 end
