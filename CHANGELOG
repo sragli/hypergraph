@@ -1,0 +1,35 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2026-05-17
+
+### Added
+
+- `Hypergraph` module for creating and manipulating hypergraphs
+  - `new/0` — create an empty hypergraph
+  - `new/2` — create a hypergraph from vertices and hyperedges
+  - `add_hyperedge/2` — add a hyperedge (automatically registers new vertices)
+  - `remove_vertex/2` — remove a vertex and trim all affected hyperedges
+  - `remove_hyperedge/2` — remove a specific hyperedge
+  - `vertices/1` — return all vertices as a `MapSet`
+  - `hyperedges/1` — return all hyperedges
+  - `degree/2` — count hyperedges containing a given vertex
+  - `neighbors/2` — find vertices sharing at least one hyperedge with a given vertex
+  - `incident_hyperedges/2` — list hyperedges containing a given vertex
+  - `hyperedge_size/1` — return the number of vertices in a hyperedge
+  - `connected?/3` — check whether two vertices share a hyperedge
+  - `vertex_count/1` — total number of vertices
+  - `hyperedge_count/1` — total number of hyperedges
+  - `to_graph/1` — project the hypergraph to a list of pairwise edges
+  - `stats/1` — summary statistics (counts, degree distribution, hyperedge size distribution)
+- `Hypergraph.CorrelationLength` module for measuring information propagation
+  - `compute/4` — fit an exponential decay to Mutual Information values across distances;
+    uses parallel `Task.async_stream` for performance
+- `Hypergraph.NetworkGraph` module for interactive visualization
+  - `visualize/1` — render a circular-layout VegaLite network graph with degree-encoded
+    node size and color
+- `examples.livemd` — runnable Livebook with social network and chemical reaction examples

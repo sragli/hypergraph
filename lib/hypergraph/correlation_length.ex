@@ -17,7 +17,7 @@ defmodule Hypergraph.CorrelationLength do
   - samples: Number of random region pairs to sample
 
   ## Returns
-  - {:ok, correlation_length} | {:error, reason}
+  - `{:ok, correlation_length}` | `{:error, reason}`
   """
   @spec compute(Hypergraph.t(), pos_integer(), pos_integer(), pos_integer()) ::
           {:ok, float()}
